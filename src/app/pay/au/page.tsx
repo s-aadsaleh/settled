@@ -1,19 +1,25 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
+// import { Card } from "@/components/ui/card"
 // import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useState } from "react"
-import QRCode from "react-qr-code"
+// import QRCode from "react-qr-code"
 import { HomeDock } from "@/components/home-dock"
 import { RainbowButton } from "@/components/ui/rainbow-button"
+import { useTheme } from "next-themes"
+import { cn } from "@/lib/utils"
+import { Particles } from "@/components/ui/particles"
+import { PaymentQRDialog } from "@/components/ui/payment-qr-dialog"
 
 export default function AUPaymentPage() {
+  const { resolvedTheme } = useTheme()
   const [mobileNumber, setMobileNumber] = useState("")
   const [cardLastDigits, setCardLastDigits] = useState("")
   const [isFormValid, setIsFormValid] = useState(false)
+  const [showQR, setShowQR] = useState(false)
 
   const validateForm = (mobile: string, card: string) => {
     const isMobileValid = /^[0-9]{10}$/.test(mobile)
@@ -41,69 +47,77 @@ export default function AUPaymentPage() {
     return `upi://pay?pa=AUCC${mobileNumber}${cardLastDigits}@AUBANK&pn=AU Bank Payment&cu=INR`;
   }
 
+  const handleGenerateQR = () => {
+    if (!isFormValid) {
+      return;
+    }
+    setShowQR(true);
+  };
+
   return (
     <main className="min-h-screen p-8 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="pattern-dots pattern-black dark:pattern-white pattern-bg-transparent 
-        pattern-size-4 pattern-opacity-10 absolute inset-0" />
+      <Particles
+        className="absolute inset-0 -z-10"
+        quantity={100}
+        staticity={50}
+        color={resolvedTheme === "dark" ? "#ffffff" : "#000000"}
+      />
       
       <div className="relative z-10 w-full">
-        <Card className="p-8 w-full max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-          <h1 className="text-2xl font-bold text-center mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            AU Small Finance Bank Payment
-          </h1>
-          
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="mobile">Mobile Number</Label>
-              <Input
-                id="mobile"
-                placeholder="Enter 10 digit mobile number"
-                value={mobileNumber}
-                onChange={handleMobileChange}
-                maxLength={10}
-              />
-            </div>
+        <div className={cn(
+          "w-full max-w-md mx-auto",
+          "rounded-xl border border-[rgba(255,255,255,0.10)]",
+          "dark:bg-[rgba(40,40,40,0.70)] bg-gray-100",
+          "shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset]",
+          "p-8"
+        )}>
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-center mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              AU Small Finance Bank Payment
+            </h1>
+            
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="mobile">Mobile Number</Label>
+                <Input
+                  id="mobile"
+                  placeholder="Enter 10 digit mobile number"
+                  value={mobileNumber}
+                  onChange={handleMobileChange}
+                  maxLength={10}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="card">Card Last 4 Digits</Label>
-              <Input
-                id="card"
-                placeholder="Enter last 4 digits of your card"
-                value={cardLastDigits}
-                onChange={handleCardChange}
-                maxLength={4}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="card">Card Last 4 Digits</Label>
+                <Input
+                  id="card"
+                  placeholder="Enter last 4 digits of your card"
+                  value={cardLastDigits}
+                  onChange={handleCardChange}
+                  maxLength={4}
+                />
+              </div>
 
-            <Dialog>
-              <DialogTrigger asChild>
               <RainbowButton 
-                  className="w-full" 
-                  disabled={!isFormValid}
-                >
-                  Get UPI QR Code
-                </RainbowButton>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Payment QR Code</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col items-center justify-center space-y-4 p-4">
-                  <div className="p-4 bg-white rounded-lg">
-                    <QRCode 
-                      value={getUpiForQR()}
-                      size={256}
-                    />
-                  </div>
-                  <p className="text-sm font-mono break-all text-center">
-                    {getUpiId()}
-                  </p>
-                </div>
-              </DialogContent>
-            </Dialog>
+                onClick={handleGenerateQR}
+                className="w-full" 
+                disabled={!isFormValid}
+              >
+                Get UPI QR Code
+              </RainbowButton>
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
+
+      <PaymentQRDialog 
+        open={showQR}
+        onOpenChange={setShowQR}
+        bankName="AU Small Finance Bank"
+        upiId={getUpiId()}
+        upiLink={getUpiForQR()}
+      />
 
       <HomeDock />
     </main>

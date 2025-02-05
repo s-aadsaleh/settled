@@ -1,29 +1,40 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
+// import { Card } from "@/components/ui/card"
 // import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+// import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
-import QRCode from "react-qr-code"
+// import QRCode from "react-qr-code"
 import { HomeDock } from "@/components/home-dock"
 import { RainbowButton } from "@/components/ui/rainbow-button"
+import { Particles } from "@/components/ui/particles"
+import { useTheme } from "next-themes"
+import { cn } from "@/lib/utils"
+import { CardInput } from "@/components/ui/card-input"
+import { validateCardNumber, getCardType } from "@/lib/card-utils"
+import { useToast } from "@/hooks/use-toast"
+// import { motion, AnimatePresence } from "framer-motion"
+import { PaymentQRDialog } from "@/components/ui/payment-qr-dialog"
 
 export default function AmexPaymentPage() {
+  const { resolvedTheme } = useTheme()
+  const { toast } = useToast()
   const [cardNumber, setCardNumber] = useState("")
-  const [isFormValid, setIsFormValid] = useState(false)
+  const [showQR, setShowQR] = useState(false)
 
-  const validateForm = (card: string) => {
-    const isCardValid = /^37[0-9]{13}$/.test(card) // Must start with 37 and be 15 digits
-    setIsFormValid(isCardValid)
-  }
-
-  const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 15)
-    setCardNumber(value)
-    validateForm(value)
-  }
+  const handleGenerateQR = () => {
+    const type = getCardType(cardNumber);
+    if (!type || !validateCardNumber(cardNumber)) {
+      toast({
+        variant: "destructive",
+        description: "Please enter a valid credit card number.",
+      })
+      return;
+    }
+    setShowQR(true);
+  };
 
   const getUpiId = () => {
     return `AEBC${cardNumber}@SC`
@@ -35,63 +46,62 @@ export default function AmexPaymentPage() {
 
   return (
     <main className="min-h-screen p-8 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="pattern-dots pattern-black dark:pattern-white pattern-bg-transparent 
-        pattern-size-4 pattern-opacity-10 absolute inset-0" />
+      <Particles
+        className="absolute inset-0 -z-10"
+        quantity={100}
+        staticity={50}
+        color={resolvedTheme === "dark" ? "#ffffff" : "#000000"}
+      />
       
-      {/* <Link href="/" className="absolute top-8 left-8 z-20">
-        <Button variant="outline" className="bg-white/80 backdrop-blur-sm">← Back</Button>
-      </Link> */}
 
       <div className="relative z-10 w-full">
-        <Card className="p-8 w-full max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-          <h1 className="text-2xl font-bold text-center mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            American Express Payment
-          </h1>
-          
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="card">Card Number</Label>
-              <Input
-                id="card"
-                placeholder="Enter 15 digit card number"
-                value={cardNumber}
-                onChange={handleCardChange}
-                maxLength={15}
-              />
-              <p className="text-sm text-muted-foreground">
-                Card number must start with 37
-              </p>
-            </div>
+        <div className={cn(
+          "w-full max-w-md mx-auto",
+          "rounded-xl border border-[rgba(255,255,255,0.10)]",
+          "dark:bg-[rgba(40,40,40,0.70)] bg-gray-100",
+          "shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset]",
+          "p-8"
+        )}>
+          <div className="relative z-10">
+            <h1 className="text-2xl font-bold text-center mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              American Express Payment
+            </h1>
+            
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="card">Card Number</Label>
+                <CardInput
+                  id="card"
+                  placeholder="Enter 15 digit card number"
+                  value={cardNumber}
+                  onValueChange={(value) => {
+                    setCardNumber(value);
+                  }}
+                  maxLength={17} // 15 digits + 2 spaces
+                />
+                <p className="text-sm text-muted-foreground">
+                  Card number must start with 37
+                </p>
+              </div>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <RainbowButton 
-                  className="w-full" 
-                  disabled={!isFormValid}
-                >
-                  Get UPI QR Code
-                </RainbowButton>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Payment QR Code</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col items-center justify-center space-y-4 p-4">
-                  <div className="p-4 bg-white rounded-lg">
-                    <QRCode 
-                      value={getUpiForQR()}
-                      size={256}
-                    />
-                  </div>
-                  <p className="text-sm font-mono break-all text-center">
-                    {getUpiId()}
-                  </p>
-                </div>
-              </DialogContent>
-            </Dialog>
+              <RainbowButton 
+                onClick={handleGenerateQR}
+                className="w-full"
+              >
+                Get UPI QR Code
+              </RainbowButton>
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
+
+      <PaymentQRDialog 
+        open={showQR}
+        onOpenChange={setShowQR}
+        bankName="American Express"
+        upiId={getUpiId()}
+        upiLink={getUpiForQR()}
+      />
 
       <HomeDock />
     </main>

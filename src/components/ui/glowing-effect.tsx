@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { animate } from "motion";
+import { animate } from "motion/react";
 
 interface GlowingEffectProps {
   blur?: number;
@@ -16,8 +16,7 @@ interface GlowingEffectProps {
   movementDuration?: number;
   borderWidth?: number;
 }
-
-export const GlowingEffect = memo(
+const GlowingEffect = memo(
   ({
     blur = 0,
     inactiveZone = 0.7,
@@ -28,7 +27,7 @@ export const GlowingEffect = memo(
     className,
     movementDuration = 2,
     borderWidth = 1,
-    disabled = false,
+    disabled = true,
   }: GlowingEffectProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const lastPosition = useRef({ x: 0, y: 0 });
@@ -186,4 +185,6 @@ export const GlowingEffect = memo(
   }
 );
 
-GlowingEffect.displayName = "GlowingEffect"; 
+GlowingEffect.displayName = "GlowingEffect";
+
+export { GlowingEffect };
