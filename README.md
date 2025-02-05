@@ -1,7 +1,5 @@
 # settled
 
-![settled homepage](public/og.png)
-
 A modern web application that enables unrestricted credit card payments via UPI and IMPS/NEFT, bypassing BBPS limitations.
 
 ## 🎯 Problem & Solution
